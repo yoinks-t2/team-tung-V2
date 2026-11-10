@@ -1,0 +1,420 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Gamepad2, Search, Trophy, Play, Star, Plus, 
+  ExternalLink, Maximize2, Shield, Flame, UserCheck, 
+  X, Check, Sparkles, Filter, ChevronRight
+} from 'lucide-react';
+
+// --- INITIAL DATA ---
+const INITIAL_GAMES = [
+  {
+    id: '1',
+    title: 'Geometry Dash (Web Edition)',
+    category: 'Rhythm / Action',
+    rating: 4.8,
+    embedUrl: 'https://scratch.mit.edu/projects/105500895/embed',
+    isExternal: true,
+    thumbnail: 'https://images.unsplash.com/photo-1550745165-9bc0b252726f?auto=format&fit=crop&q=80&w=600',
+    description: 'Jump, fly, and flip your way through dangerous passages and spiky obstacles.',
+    playedCount: 1420
+  },
+  {
+    id: '2',
+    title: 'Super Mario Bros Arcade',
+    category: 'Platformer',
+    rating: 4.9,
+    embedUrl: 'https://scratch.mit.edu/projects/19597395/embed',
+    isExternal: true,
+    thumbnail: 'https://images.unsplash.com/photo-1612287230202-1ff1d85d1bdf?auto=format&fit=crop&q=80&w=600',
+    description: 'Classic side-scrolling platformer action straight in your browser.',
+    playedCount: 2310
+  },
+  {
+    id: '3',
+    title: 'Space Invaders Deluxe',
+    category: 'Retro Shooter',
+    rating: 4.6,
+    embedUrl: 'https://scratch.mit.edu/projects/10128407/embed',
+    isExternal: true,
+    thumbnail: 'https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&q=80&w=600',
+    description: 'Defend planet Earth from descending waves of alien invaders.',
+    playedCount: 980
+  },
+  {
+    id: '4',
+    title: 'Tetris Cyber Edition',
+    category: 'Puzzle',
+    rating: 4.7,
+    embedUrl: 'https://scratch.mit.edu/projects/169420/embed',
+    isExternal: true,
+    thumbnail: 'https://images.unsplash.com/photo-1538481199705-c710c4e965fc?auto=format&fit=crop&q=80&w=600',
+    description: 'Arrange falling block polyominos to clear full horizontal lines.',
+    playedCount: 1850
+  }
+];
+
+const ROSTER = [
+  {
+    name: 'Deniz',
+    role: 'Founder & In-Game Leader',
+    badge: 'LEADER',
+    color: 'from-cyan-500 to-blue-600',
+    status: 'Online',
+    favoriteGame: 'Valorant / Geometry Dash',
+    avatar: 'https://images.unsplash.com/photo-1566492031773-4f4e44671857?auto=format&fit=crop&q=80&w=200'
+  },
+  {
+    name: 'Vincent',
+    role: 'Co-Founder & Lead Developer',
+    badge: 'TECH LEAD',
+    color: 'from-purple-500 to-pink-600',
+    status: 'Coding',
+    favoriteGame: 'League of Legends / Cyberpunk',
+    avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200'
+  }
+];
+
+export default function App() {
+  const [games, setGames] = useState(INITIAL_GAMES);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [activeGame, setActiveGame] = useState<any>(null);
+  const [showAddModal, setShowAddModal] = useState(false);
+
+  // New Game Form state
+  const [newTitle, setNewTitle] = useState('');
+  const [newCategory, setNewCategory] = useState('Action');
+  const [newUrl, setNewUrl] = useState('');
+  const [newDesc, setNewDesc] = useState('');
+
+  // LocalStorage Persistence
+  useEffect(() => {
+    const saved = localStorage.getItem('team_tung_games');
+    if (saved) {
+      try { setGames(JSON.parse(saved)); } catch (e) {}
+    }
+  }, []);
+
+  const saveGames = (updated: typeof INITIAL_GAMES) => {
+    setGames(updated);
+    localStorage.setItem('team_tung_games', JSON.stringify(updated));
+  };
+
+  const handleAddGame = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTitle || !newUrl) return;
+
+    let finalUrl = newUrl;
+    // Auto-convert Scratch URLs to embed URLs if needed
+    if (finalUrl.includes('scratch.mit.edu/projects/') && !finalUrl.includes('/embed')) {
+      finalUrl = finalUrl.replace(/\/$/, '') + '/embed';
+    }
+
+    const gameObj = {
+      id: Date.now().toString(),
+      title: newTitle,
+      category: newCategory,
+      rating: 5.0,
+      embedUrl: finalUrl,
+      isExternal: true,
+      thumbnail: 'https://images.unsplash.com/photo-1542751371-adc38448a05e?auto=format&fit=crop&q=80&w=600',
+      description: newDesc || 'User-added custom playable web game.',
+      playedCount: 1
+    };
+
+    const updated = [gameObj, ...games];
+    saveGames(updated);
+    setNewTitle('');
+    setNewUrl('');
+    setNewDesc('');
+    setShowAddModal(false);
+  };
+
+  const filteredGames = games.filter(g => {
+    const matchesSearch = g.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                          g.category.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesCat = selectedCategory === 'All' || g.category.includes(selectedCategory);
+    return matchesSearch && matchesCat;
+  });
+
+  return (
+    <div className="min-h-screen bg-slate-950 text-slate-100 font-sans selection:bg-cyan-500 selection:text-black">
+      
+      {/* NAVBAR */}
+      <header className="sticky top-0 z-40 border-b border-slate-800 bg-slate-950/80 backdrop-blur-md px-6 py-4">
+        <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 bg-gradient-to-tr from-cyan-500 to-blue-600 rounded-xl shadow-lg shadow-cyan-500/20">
+              <Gamepad2 className="w-6 h-6 text-black stroke-[2.5]" />
+            </div>
+            <div>
+              <h1 className="text-xl font-black tracking-wider uppercase bg-gradient-to-r from-cyan-400 via-teal-300 to-indigo-400 bg-clip-text text-transparent">
+                Team Tung Gaming
+              </h1>
+              <p className="text-xs text-slate-400 font-medium">By Deniz & Vincent</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setShowAddModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 rounded-lg text-sm font-semibold transition"
+            >
+              <Plus className="w-4 h-4" /> Add Game Link
+            </button>
+            <a 
+              href="https://netlify.com" 
+              target="_blank" 
+              rel="noreferrer"
+              className="text-xs px-3 py-1.5 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 rounded-full flex items-center gap-1.5 font-mono"
+            >
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Netlify Ready 24/7
+            </a>
+          </div>
+        </div>
+      </header>
+
+      {/* HERO BANNER */}
+      <section className="relative px-6 py-12 border-b border-slate-800/80 bg-slate-900/40 overflow-hidden">
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-cyan-500/10 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute bottom-0 left-1/4 w-96 h-96 bg-purple-500/10 blur-[120px] rounded-full pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-8 relative z-10">
+          <div className="max-w-2xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800/80 border border-slate-700 text-slate-300 text-xs font-semibold mb-4">
+              <Sparkles className="w-3.5 h-3.5 text-cyan-400" /> Play Full Browser Games
+            </div>
+            <h2 className="text-4xl sm:text-5xl font-extrabold tracking-tight text-white mb-4 leading-tight">
+              Play Real Games directly on <span className="text-transparent bg-clip-text bg-gradient-to-r from-cyan-400 to-blue-500">Team Tung</span>
+            </h2>
+            <p className="text-slate-400 text-base sm:text-lg mb-6">
+              Browse arcade classics, rhythm games, and platformers. Add external links or drop custom HTML5 folders into your repository!
+            </p>
+
+            {/* SEARCH & FILTER */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <div className="relative flex-1">
+                <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
+                <input 
+                  type="text" 
+                  placeholder="Search games..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition"
+                />
+              </div>
+              <div className="flex gap-2 overflow-x-auto pb-1 sm:pb-0">
+                {['All', 'Platformer', 'Rhythm', 'Retro', 'Puzzle'].map((cat) => (
+                  <button
+                    key={cat}
+                    onClick={() => setSelectedCategory(cat)}
+                    className={`px-4 py-2.5 rounded-xl text-xs font-semibold transition whitespace-nowrap border ${
+                      selectedCategory === cat
+                        ? 'bg-cyan-500 border-cyan-400 text-black shadow-lg shadow-cyan-500/20'
+                        : 'bg-slate-900 border-slate-700 text-slate-300 hover:border-slate-600'
+                    }`}
+                  >
+                    {cat}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* TEAM CREATORS CARD */}
+          <div className="w-full md:w-80 bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
+            <h3 className="text-xs font-bold uppercase tracking-wider text-slate-400 mb-4 flex items-center gap-2">
+              <Shield className="w-4 h-4 text-cyan-400" /> Team Tung Leadership
+            </h3>
+            <div className="space-y-3">
+              {ROSTER.map((member) => (
+                <div key={member.name} className="flex items-center gap-3 p-2.5 rounded-xl bg-slate-950/60 border border-slate-800/80">
+                  <img src={member.avatar} alt={member.name} className="w-10 h-10 rounded-lg object-cover border border-slate-700" />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-bold text-white truncate">{member.name}</p>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded font-black text-white bg-gradient-to-r ${member.color}`}>
+                        {member.badge}
+                      </span>
+                    </div>
+                    <p className="text-xs text-slate-400 truncate">{member.role}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* GAME CATALOG GRID */}
+      <main className="max-w-7xl mx-auto px-6 py-10">
+        <div className="flex items-center justify-between mb-6">
+          <h3 className="text-xl font-bold text-white flex items-center gap-2">
+            <Flame className="w-5 h-5 text-cyan-400" /> Featured Playable Games ({filteredGames.length})
+          </h3>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          {filteredGames.map((game) => (
+            <div 
+              key={game.id}
+              className="group bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden hover:border-cyan-500/50 transition duration-300 flex flex-col"
+            >
+              <div className="relative h-44 overflow-hidden bg-slate-950">
+                <img 
+                  src={game.thumbnail} 
+                  alt={game.title} 
+                  className="w-full h-full object-cover group-hover:scale-105 transition duration-500 opacity-90 group-hover:opacity-100"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-transparent to-transparent" />
+                <span className="absolute top-3 left-3 bg-slate-950/80 backdrop-blur-md text-cyan-400 border border-cyan-500/30 text-[11px] font-bold px-2.5 py-1 rounded-full">
+                  {game.category}
+                </span>
+              </div>
+
+              <div className="p-4 flex-1 flex flex-col justify-between">
+                <div>
+                  <h4 className="font-bold text-lg text-white mb-1 group-hover:text-cyan-400 transition">
+                    {game.title}
+                  </h4>
+                  <p className="text-xs text-slate-400 line-clamp-2 mb-4">
+                    {game.description}
+                  </p>
+                </div>
+
+                <div className="flex items-center justify-between pt-3 border-t border-slate-800/80">
+                  <div className="flex items-center gap-1 text-amber-400 text-xs font-bold">
+                    <Star className="w-3.5 h-3.5 fill-amber-400" /> {game.rating}
+                  </div>
+
+                  <button
+                    onClick={() => setActiveGame(game)}
+                    className="flex items-center gap-1.5 px-4 py-2 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-bold text-xs rounded-xl shadow-lg shadow-cyan-500/10 transition"
+                  >
+                    <Play className="w-3.5 h-3.5 fill-black" /> Play Now
+                  </button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </main>
+
+      {/* GAME PLAYER MODAL */}
+      {activeGame && (
+        <div className="fixed inset-0 z-50 bg-slate-950/90 backdrop-blur-lg flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-5xl rounded-2xl overflow-hidden shadow-2xl flex flex-col h-[85vh]">
+            <div className="flex items-center justify-between px-6 py-4 border-b border-slate-800 bg-slate-950">
+              <div className="flex items-center gap-3">
+                <Gamepad2 className="w-5 h-5 text-cyan-400" />
+                <h3 className="font-bold text-white text-lg">{activeGame.title}</h3>
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700">
+                  {activeGame.category}
+                </span>
+              </div>
+              <button 
+                onClick={() => setActiveGame(null)}
+                className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="flex-1 bg-black relative">
+              <iframe 
+                src={activeGame.embedUrl} 
+                title={activeGame.title}
+                className="w-full h-full border-0"
+                allowFullScreen
+              />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ADD GAME LINK MODAL */}
+      {showAddModal && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl p-6 shadow-2xl relative">
+            <button 
+              onClick={() => setShowAddModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="text-xl font-bold text-white mb-1">Add Playable Game Link</h3>
+            <p className="text-xs text-slate-400 mb-6">
+              Paste an iframe link, Scratch embed URL, or HTML5 game URL to add it to Team Tung!
+            </p>
+
+            <form onSubmit={handleAddGame} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Game Title</label>
+                <input 
+                  type="text" 
+                  required
+                  placeholder="e.g. Flappy Bird Web"
+                  value={newTitle}
+                  onChange={(e) => setNewTitle(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Category</label>
+                <select 
+                  value={newCategory}
+                  onChange={(e) => setNewCategory(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500"
+                >
+                  <option value="Action">Action</option>
+                  <option value="Platformer">Platformer</option>
+                  <option value="Rhythm">Rhythm</option>
+                  <option value="Retro">Retro</option>
+                  <option value="Puzzle">Puzzle</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Embed or Game URL</label>
+                <input 
+                  type="url" 
+                  required
+                  placeholder="https://scratch.mit.edu/projects/105500895/embed"
+                  value={newUrl}
+                  onChange={(e) => setNewUrl(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase mb-1">Description</label>
+                <textarea 
+                  rows={2}
+                  placeholder="Brief description of the game..."
+                  value={newDesc}
+                  onChange={(e) => setNewDesc(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-sm text-white focus:outline-none focus:border-cyan-500"
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-black font-extrabold rounded-xl shadow-lg shadow-cyan-500/20 transition mt-2"
+              >
+                Save & Add Game
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* FOOTER */}
+      <footer className="border-t border-slate-800/80 py-8 text-center text-xs text-slate-500">
+        <p>Games by Team Tung • Crafted by Deniz and Vincent</p>
+        <p className="mt-1">Hosted continuously on Netlify static edge network.</p>
+      </footer>
+    </div>
+  );
+}
